@@ -1,32 +1,39 @@
 __author__ = 'Quasi-Boden'
-
+import time
 import requests
+import re
 from bs4 import BeautifulSoup
 
 minimumPrice = raw_input('Please enter minimum price:')
-maximumPrice = float(minimumPrice) * 1.1
+maximumPrice = raw_input('Please enter maximum price:')
 
+print('Fetching Marketplace Items between ' + str(minimumPrice) + ' and ' + str(maximumPrice) + '...')
 url = 'http://www.gaiaonline.com/marketplace/itemsearch/100/?search=&filter=0&showall=on&floor=' + str(minimumPrice) +'&ceiling=' + str(maximumPrice) + '&sortBy=85'
 marketPage = requests.get(url)
+print(url)
+
 
 soup = BeautifulSoup(marketPage.content)
-#print(BeautifulSoup.prettify(soup))
-print(url)
-import re
-
 itemList = []
 
+print('Building item list...')
 for link in soup.find_all('div', 'sparkles_container'):
     itemList.append('http://www.gaiaonline.com/' + link.a['href'])
 
-#for link in itemList:
-#    item = requests.get(link)
-#    soup = BeautifulSoup(item.content)
-#    print(soup.find_all('Average Buy Price:'))
+for link in itemList:
+    print('Analyzing item...')
+    time.sleep(1)
+    item = requests.get(link)
+    soup = BeautifulSoup(item.content)
+    textSoup = soup.get_text()
+    lowestBuyFilter = re.compile(ur'Lowest Buy Now Price:\s*\S* ')
+    lowestBuyPriceText = re.findall(lowestBuyFilter, textSoup)
+    lowestBuyPrice = float(re.sub(r"\D", "", str(lowestBuyPriceText)))
 
+    averageBuyFilter = re.compile(ur'Average Buy Price:\s*\S* ')
+    averageBuyPriceText = re.findall(averageBuyFilter, textSoup)
+    averageBuyPrice = float(re.sub(r"\D", "", str(averageBuyPriceText)))
 
-test_url = 'http://www.gaiaonline.com//marketplace/itemdetail/10022863'
-item = requests.get(test_url)
-soup = BeautifulSoup(item.content)
-print(soup.find(id='item_basicdata').find('gold'))
-print(soup.find_all(re.compile('/[0-9]*\sgold/')))
+    potentialProfit = averageBuyPrice / lowestBuyPrice * 100
+    if potentialProfit > 150:
+        print(link + ' : Potential Profit = ' + str(int(potentialProfit)) + '%')
