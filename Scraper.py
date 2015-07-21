@@ -18,10 +18,9 @@ itemList = []
 
 print('Building item list...')
 for link in soup.find_all('div', 'sparkles_container'):
-    itemList.append('http://www.gaiaonline.com/' + link.a['href'])
+    itemList.append('http://www.gaiaonline.com' + link.a['href'])
 
 for link in itemList:
-    print('Analyzing item...')
     time.sleep(1)
     item = requests.get(link)
     soup = BeautifulSoup(item.content)
